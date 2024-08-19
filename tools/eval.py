@@ -19,6 +19,7 @@ import copy
 
 from utils.progress_bar import ProgressBar
 from utils.log_tool import SimpleModelLog
+print("NISH:: Before")
 from data.preprocess import merge_batch, get_dataloader, get_dataloader_deepim # merge_second_batch_multigpu
 from utils.config_io import merge_cfg, save_cfg
 import torchplus
@@ -34,7 +35,7 @@ from utils.util import modify_parameter_name_with_map
 from utils.eval_metric import *
 from config.default import get_cfg
 
-
+print("NISH:: After Import")
 
 GLOBAL_GPUS_PER_DEVICE = 1  
 GLOBAL_STEP = 0
@@ -216,7 +217,8 @@ def multi_proc_train(
     }
     from types import SimpleNamespace 
     params = SimpleNamespace(**params)
-
+    print("NISH:: Inside multi_proc_train")
+    
     os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(
         str(x) for x in range(start_gpu_id, start_gpu_id+gpus_per_node))
     print(f"CUDA_VISIBLE_DEVICES={os.environ['CUDA_VISIBLE_DEVICES']}"  )
@@ -304,16 +306,25 @@ def eval(
     ######################################## initialize the distributed env #########################################
     if use_dist:
         if use_apex:
+            print('NISH1::rank', get_rank(use_dist))
             dist.init_process_group(
                 backend="nccl", init_method=dist_url, world_size=get_world(use_dist), rank=get_rank(use_dist))
         else:
+            print('NISH2::rank ', get_rank(use_dist))
+            print('NISH2::world ', get_world(use_dist))
+            # torch.cuda.set_device(get_rank(use_dist)%GLOBAL_GPUS_PER_DEVICE) # Nish
+            os.environ['MASTER_ADDR'] = 'localhost' # Nish
+            os.environ['MASTER_PORT'] = '12355' # Nish
             # rank, world_size = dist_init(str(dist_port))
+            # dist.init_process_group(
+                # backend="nccl", init_method=dist_url, world_size=get_world(use_dist), rank=get_rank(use_dist)) ##NISH
             dist.init_process_group(
-                backend="nccl", init_method=dist_url, world_size=get_world(use_dist), rank=get_rank(use_dist))
+                backend="gloo", init_method='env://', world_size=get_world(use_dist), rank=get_rank(use_dist))  ##NISH
     
     print(get_rank(use_dist)%GLOBAL_GPUS_PER_DEVICE, flush=True)
     #set cuda device number
-    torch.cuda.set_device(get_rank(use_dist)%GLOBAL_GPUS_PER_DEVICE)
+    torch.cuda.set_device(get_rank(use_dist)%GLOBAL_GPUS_PER_DEVICE) # Nish
+    print("NISH:: After use_dist")
 
     ############################################ create folders ############################################
     print(f"Set seed={seed}", flush=True)
@@ -347,7 +358,7 @@ def eval(
 
     #update the global config object
     get_cfg().merge(config.get("BASIC",{}),"BASIC" )  
-
+    print("NISH:: Config")
     input_cfg = config.train_input_reader
     eval_input_cfg = config.eval_input_reader
     model_cfg = config.model
