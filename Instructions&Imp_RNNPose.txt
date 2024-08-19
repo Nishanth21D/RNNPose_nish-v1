@@ -1,0 +1,366 @@
+Model: RNNPose
+Approach: PVNet_DEEPIM+PnP
+
+[+] Building 857.1s (22/22) FINISHED                                                                     docker:default
+ => [internal] load build definition from Dockerfile                                                               0.3s
+ => => transferring dockerfile: 3.13kB                                                                             0.1s
+ => [internal] load metadata for docker.io/nvidia/cuda:12.5.1-cudnn-devel-ubuntu22.04                              1.3s
+ => [internal] load .dockerignore                                                                                  0.3s
+ => => transferring context: 2B                                                                                    0.0s
+ => [ 1/17] FROM docker.io/nvidia/cuda:12.5.1-cudnn-devel-ubuntu22.04@sha256:79b4af38a6e62d1e8b0ec78ed12dfb91936b  0.0s
+ => [internal] load build context                                                                                  0.3s
+ => => transferring context: 32B                                                                                   0.0s
+ => CACHED [ 2/17] RUN apt-key del 7fa2af80                                                                        0.0s
+ => CACHED [ 3/17] RUN apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu220  0.0s
+ => CACHED [ 4/17] RUN apt-get update                                                                              0.0s
+ => CACHED [ 5/17] RUN  apt-get install -y -qq --no-install-recommends     libglvnd0     libgl1     libglx0     l  0.0s
+ => CACHED [ 6/17] RUN apt-get update --fix-missing &&     apt-get install -y wget bzip2 ca-certificates curl git  0.0s
+ => CACHED [ 7/17] RUN wget --quiet https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-py37_4.9.2  0.0s
+ => CACHED [ 8/17] COPY freeze.yml freeze.yml                                                                      0.0s
+ => CACHED [ 9/17] RUN /opt/miniconda3/bin/conda env create -n py37 -f freeze.yml                                  0.0s
+ => CACHED [10/17] WORKDIR /tmp/unique_for_apex                                                                    0.0s
+ => CACHED [11/17] RUN /opt/miniconda3/envs/py37/bin/pip3 uninstall -y apex || :                                   0.0s
+ => CACHED [12/17] RUN /opt/miniconda3/envs/py37/bin/pip3 uninstall -y apex || :                                   0.0s
+ => CACHED [13/17] RUN SHA=ToUcHMe git clone https://github.com/NVIDIA/apex.git                                    0.0s
+ => CACHED [14/17] WORKDIR /tmp/unique_for_apex/apex                                                               0.0s
+ => [15/17] RUN apt-get update   && apt-get install -y -qq --no-install-recommends   cmake build-essential vim   286.6s
+ => [16/17] RUN mkdir -p /home/RNNPose                                                                             5.4s
+ => [17/17] WORKDIR /home/RNNPose                                                                                  2.3s
+ => exporting to image                                                                                           556.0s
+ => => exporting layers                                                                                          551.7s
+ => => writing image sha256:8254b49ec49608ddccb240412f82b1322e5d9fc8affe4807680c73357beff390                       0.2s
+ => => naming to docker.io/library/rnnpose                                                                         1.5s
+
+ 4 warnings found (use --debug to expand):
+ - LegacyKeyValueFormat: "ENV key=value" should be used instead of legacy "ENV key value" format (line 19)
+ - LegacyKeyValueFormat: "ENV key=value" should be used instead of legacy "ENV key value" format (line 20)
+ - LegacyKeyValueFormat: "ENV key=value" should be used instead of legacy "ENV key value" format (line 23)
+ - LegacyKeyValueFormat: "ENV key=value" should be used instead of legacy "ENV key value" format (line 49)
+(base) nishanth@Bright-PC:/usr/workout/rnnpose_dir/RNNPose/docker$
+(base) nishanth@Bright-PC:/usr/workout/rnnpose_dir/RNNPose/docker$
+(base) nishanth@Bright-PC:/usr/workout/rnnpose_dir/RNNPose/docker$
+(base) nishanth@Bright-PC:/usr/workout/rnnpose_dir/RNNPose/docker$
+
+
+sudo docker run  -it  --runtime=nvidia --ipc=host  --volume /usr/workout/rnnpose_dir/:/home/  -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1  rnnpose bash
+
+sudo docker run  -it  --runtime=nvidia --ipc=host  --volume /usr/workout/rnnpose_dir/:/home/  -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1  rnnpose_new bash ## Not working
+
+sudo chmod 777 /usr/workout/
+
+bash compile_3rdparty.sh
+bash copy.sh # make path changes in the template_fw0.5.yml file before run it 
+bash run_dataformatter.sh   #3 Once atleast 1 or 2 class folder created, quit the prog to save disk memory
+run_datainfo_generation.sh
+bash scripts/eval.sh
+
+##_ZSt28__throw_bad_array_new_lengthv
+cd /opt/miniconda3/envs/py37/lib/
+# Verify that `_ZSt28__throw_bad_array_new_lengthv` is missing in the target shared object
+objdump -T libstdc++.so.6.0.28 | grep throw_bad_array
+# Back-up the target shared object
+mv libstdc++.so.6.0.28 libstdc++.so.6.0.28.old
+# Change the target to point on the system's 
+ln -s /usr/lib64/libstdc++.so.6.0.29 libstdc++.so.6.0.28
+
+##Apex
+git clone https://github.com/NVIDIA/apex
+cd apex
+# if pip >= 23.1 (ref: https://pip.pypa.io/en/stable/news/#v23-1) which supports multiple `--config-settings` with the same key... 
+pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
+# otherwise
+pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext" ./
+
+##NCCL Error Workaround
+python -c "import torch;print(torch.cuda.nccl.version())"
+
+Network Installer for Ubuntu22.04 _ Cuda 12.6
+sudo wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+sudo apt-get update
+sudo apt install libnccl2=2.22.3-1+cuda12.6 libnccl-dev=2.22.3-1+cuda12.6
+
+Network Installer for Ubuntu22.04 _ Cuda 12.5
+$ sudo wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
+$ sudo dpkg -i cuda-keyring_1.0-1_all.deb
+$ sudo apt-get update
+sudo apt install libnccl2=2.22.3-1+cuda12.5 libnccl-dev=2.22.3-1+cuda12.5
+
+if use_dist:
+        if use_apex:
+            dist.init_process_group(
+                backend="nccl", init_method=dist_url, world_size=get_world(use_dist), rank=get_rank(use_dist))
+        else:
+            # rank, world_size = dist_init(str(dist_port))
+            os.environ['MASTER_ADDR'] = 'localhost' # Nish
+            os.environ['MASTER_PORT'] = '12355' # Nish
+            # dist.init_process_group(
+                # backend="nccl", init_method=dist_url, world_size=get_world(use_dist), rank=get_rank(use_dist)) ##NISH
+            dist.init_process_group(
+                backend="gloo", init_method='env://', world_size=get_world(use_dist), rank=get_rank(use_dist))  ##NISH
+
+
+____Final Output for cat____
+##Output for cat
+Summarize images syn_img
+INFO - 2024-08-19 15:06:51,406 - log_tool - ang_err=0.012493, trans_err=0.0077038
+Summarize images pc_proj_vis
+Summarize images pc_proj_vis_pred
+Summarize images syn_img
+###############Evaluation results of class cat###############
+/opt/miniconda3/envs/py37/lib/python3.7/site-packages/numpy/core/fromnumeric.py:3420: RuntimeWarning: Mean of empty slice.
+  out=out, **kwargs)
+/opt/miniconda3/envs/py37/lib/python3.7/site-packages/numpy/core/_methods.py:188: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+2d projections metric: 0.9940119760479041
+ADD metric: 0.9700598802395209
+ADD2 metric: 0.37425149700598803
+ADD5 metric: 0.7764471057884231
+5 cm 5 degree metric: 0.9930139720558883
+mask ap70: nan
+seq_len: 1002
+(py37) root@278eccfd6b57:/home/RNNPose/scripts#
+
+####
+
+(py37) root@278eccfd6b57:/home/RNNPose/scripts# conda list
+# packages in environment at /opt/miniconda3/envs/py37:
+#
+# Name                    Version                   Build  Channel
+_libgcc_mutex             0.1                        main    conda-forge
+_openmp_mutex             4.5                       1_gnu
+absl-py                   0.13.0                   pypi_0    pypi
+addict                    2.4.0              pyhd8ed1ab_2    conda-forge
+anyio                     2.2.0            py37h06a4308_1
+anykeystore               0.2                      pypi_0    pypi
+argon2-cffi               20.1.0           py37h27cfd23_1
+async_generator           1.10             py37h28b3542_0
+attrs                     21.2.0             pyhd3eb1b0_0
+babel                     2.9.1              pyhd3eb1b0_0
+backcall                  0.2.0              pyhd3eb1b0_0
+blas                      1.0                         mkl    conda-forge
+bleach                    3.3.0              pyhd3eb1b0_0
+brotli-python             1.0.9            py37hcd2ae1e_5    conda-forge
+brotlipy                  0.7.0           py37h27cfd23_1003
+ca-certificates           2021.5.30            ha878542_0    conda-forge
+cachetools                4.2.2                    pypi_0    pypi
+certifi                   2021.5.30        py37h89c1867_0    conda-forge
+cffi                      1.14.5           py37h261ae71_0
+charset-normalizer        2.0.4              pyhd3eb1b0_0
+colorama                  0.4.6              pyhd8ed1ab_0    conda-forge
+cryptacular               1.5.5                    pypi_0    pypi
+cryptography              3.4.7            py37hd23ed53_0
+cudatoolkit               10.2.89              h8f6ccaa_8    conda-forge
+cycler                    0.10.0                   py37_0
+cython                    0.29.24                  pypi_0    pypi
+dbus                      1.13.18              hb2f20db_0
+decorator                 4.4.2                    pypi_0    pypi
+defusedxml                0.7.1              pyhd3eb1b0_0
+easydict                  1.9                      pypi_0    pypi
+einops                    0.3.0                    pypi_0    pypi
+entrypoints               0.3                      py37_0
+expat                     2.4.1                h2531618_2
+fire                      0.4.0                    pypi_0    pypi
+flow-vis                  0.1                      pypi_0    pypi
+fontconfig                2.13.1               h6c09931_0
+freetype                  2.10.4               h5ab3b9f_0
+freetype-py               2.2.0                    pypi_0    pypi
+future                    0.18.2                   pypi_0    pypi
+fvcore                    0.1.5.post20210825            py37    fvcore
+glib                      2.68.2               h36276a3_0
+glumpy                    1.2.0                    pypi_0    pypi
+google-auth               1.31.0                   pypi_0    pypi
+google-auth-oauthlib      0.4.4                    pypi_0    pypi
+greenlet                  1.1.0                    pypi_0    pypi
+grpcio                    1.38.0                   pypi_0    pypi
+gst-plugins-base          1.14.0               h8213a91_2
+gstreamer                 1.14.0               h28cd5cc_2
+hupper                    1.10.3                   pypi_0    pypi
+icu                       58.2                 he6710b0_3
+idna                      3.2                pyhd3eb1b0_0
+imageio                   2.9.0                    pypi_0    pypi
+importlib-metadata        6.7.0                    pypi_0    pypi
+importlib_metadata        3.10.0               hd3eb1b0_0
+intel-openmp              2021.2.0           h06a4308_610
+iopath                    0.1.9                      py37    iopath
+ipykernel                 5.3.4            py37h5ca1d4c_0
+ipython                   7.22.0           py37hb070fc8_0
+ipython_genutils          0.2.0              pyhd3eb1b0_1
+ipywidgets                7.6.3              pyhd3eb1b0_1
+jedi                      0.17.0                   py37_0
+jinja2                    3.0.0              pyhd3eb1b0_0
+joblib                    1.0.1              pyhd3eb1b0_0
+jpeg                      9b                   h024ee3a_2
+json5                     0.9.6              pyhd3eb1b0_0
+jsonschema                3.2.0                      py_2    conda-forge
+jupyter                   1.0.0            py37h89c1867_6    conda-forge
+jupyter_client            6.1.12             pyhd3eb1b0_0
+jupyter_console           6.4.0              pyhd8ed1ab_0    conda-forge
+jupyter_core              4.7.1            py37h06a4308_0
+jupyter_server            1.4.1            py37h06a4308_0
+jupyterlab                3.0.16             pyhd8ed1ab_0    conda-forge
+jupyterlab_pygments       0.1.2                      py_0
+jupyterlab_server         2.7.1              pyhd3eb1b0_0
+jupyterlab_widgets        1.0.0              pyhd3eb1b0_1
+kiwisolver                1.3.1            py37h2531618_0
+kornia                    0.5.3              pyhd8ed1ab_0    conda-forge
+lcms2                     2.12                 h3be6417_0
+ld_impl_linux-64          2.35.1               h7274673_9
+libffi                    3.3                  he6710b0_2
+libgcc-ng                 9.3.0               h5101ec6_17
+libgfortran-ng            7.5.0               ha8ba4b0_17
+libgfortran4              7.5.0               ha8ba4b0_17
+libgomp                   9.3.0               h5101ec6_17
+libpng                    1.6.37               hbc83047_0
+libsodium                 1.0.18               h7b6447c_0
+libstdcxx-ng              9.3.0               hd4cf53a_17
+libtiff                   4.2.0                h85742a9_0
+libuuid                   1.0.3                h1bed415_2
+libuv                     1.40.0               h7b6447c_0
+libwebp-base              1.2.0                h27cfd23_0
+libxcb                    1.14                 h7b6447c_0
+libxml2                   2.9.10               hb55368b_3
+llvmlite                  0.36.0                   pypi_0    pypi
+loguru                    0.5.3                    pypi_0    pypi
+lz4-c                     1.9.3                h2531618_0
+markdown                  3.3.4                    pypi_0    pypi
+markdown-it-py            2.2.0                    pypi_0    pypi
+markupsafe                2.0.1            py37h27cfd23_0
+matplotlib                3.3.4            py37h06a4308_0
+matplotlib-base           3.3.4            py37h62a2d02_0
+mdurl                     0.1.2                    pypi_0    pypi
+mistune                   0.8.4           py37h14c3975_1001
+mkl                       2021.2.0           h06a4308_296
+mkl-service               2.3.0            py37h27cfd23_1
+mkl_fft                   1.3.0            py37h42c9631_2
+mkl_random                1.2.1            py37ha9443f7_2
+mmcv                      2.2.0                    pypi_0    pypi
+mmengine                  0.10.4                   pypi_0    pypi
+nbclassic                 0.2.6              pyhd3eb1b0_0
+nbclient                  0.5.3              pyhd3eb1b0_0
+nbconvert                 6.0.7                    py37_0
+nbformat                  5.1.3              pyhd3eb1b0_0
+ncurses                   6.2                  he6710b0_1
+nest-asyncio              1.5.1              pyhd3eb1b0_0
+networkx                  2.5.1                    pypi_0    pypi
+ninja                     1.10.2               hff7bd54_1
+notebook                  6.4.0            py37h06a4308_0
+numba                     0.53.1                   pypi_0    pypi
+numpy                     1.20.2           py37h2d18471_0
+numpy-base                1.20.2           py37hfae3a4d_0
+numpy-quaternion          2021.6.9.13.34.11          pypi_0    pypi
+nvidiacub                 1.10.0                        0    bottler
+oauthlib                  3.1.1                    pypi_0    pypi
+olefile                   0.46                     py37_0
+open3d                    0.13.0                   py37_0    open3d-admin
+opencv-python             4.5.2.54                 pypi_0    pypi
+openssl                   1.1.1k               h7f98852_0    conda-forge
+packaging                 20.9               pyhd3eb1b0_0
+pandas                    1.2.4            py37h2531618_0
+pandoc                    2.12                 h06a4308_0
+pandocfilters             1.4.3            py37h06a4308_1
+parso                     0.8.2              pyhd3eb1b0_0
+pastedeploy               2.1.1                    pypi_0    pypi
+pbkdf2                    1.3                      pypi_0    pypi
+pcre                      8.44                 he6710b0_0
+pexpect                   4.8.0              pyhd3eb1b0_3
+pickleshare               0.7.5           pyhd3eb1b0_1003
+pillow                    8.2.0            py37he98fc37_0
+pip                       21.1.2           py37h06a4308_0
+plaster                   1.0                      pypi_0    pypi
+plaster-pastedeploy       0.7                      pypi_0    pypi
+platformdirs              4.0.0                    pypi_0    pypi
+plyfile                   0.7.4              pyhd8ed1ab_0    conda-forge
+portalocker               2.3.0            py37h06a4308_0
+prometheus_client         0.11.0             pyhd3eb1b0_0
+prompt-toolkit            3.0.17             pyh06a4308_0
+prompt_toolkit            3.0.17               hd3eb1b0_0
+protobuf                  3.17.3                   pypi_0    pypi
+ptyprocess                0.7.0              pyhd3eb1b0_2
+pyasn1                    0.4.8                    pypi_0    pypi
+pyasn1-modules            0.2.8                    pypi_0    pypi
+pyassimp                  4.1.3                    pypi_0    pypi
+pycparser                 2.20                       py_2
+pyglet                    1.5.17                   pypi_0    pypi
+pygments                  2.17.2                   pypi_0    pypi
+pyopengl                  3.1.5                    pypi_0    pypi
+pyopengl-accelerate       3.1.5                    pypi_0    pypi
+pyopenssl                 20.0.1             pyhd3eb1b0_1
+pyparsing                 2.4.7              pyhd3eb1b0_0
+pyqt                      5.9.2            py37h05f1152_2
+pyramid                   2.0                      pypi_0    pypi
+pyramid-mailer            0.15.1                   pypi_0    pypi
+pyrsistent                0.17.3           py37h7b6447c_0
+pysocks                   1.7.1                    py37_1
+python                    3.7.10               h12debd9_4
+python-dateutil           2.8.1              pyhd3eb1b0_0
+python3-openid            3.2.0                    pypi_0    pypi
+python_abi                3.7                     1_cp37m    conda-forge
+pytorch                   1.7.1           py3.7_cuda10.2.89_cudnn7.6.5_0    pytorch
+pytorch3d                 0.5.0           py37_cu102_pyt171    pytorch3d
+pytz                      2021.1             pyhd3eb1b0_0
+pywavelets                1.1.1                    pypi_0    pypi
+pyyaml                    5.4.1            py37h5e8e339_0    conda-forge
+pyzmq                     20.0.0           py37h2531618_1
+qt                        5.9.7                h5867ecd_1
+qtconsole                 5.1.1              pyhd8ed1ab_0    conda-forge
+qtpy                      1.10.0             pyhd8ed1ab_0    conda-forge
+readline                  8.1                  h27cfd23_0
+repoze-sendmail           4.4.1                    pypi_0    pypi
+requests                  2.26.0             pyhd3eb1b0_0
+requests-oauthlib         1.3.0                    pypi_0    pypi
+rich                      13.7.1                   pypi_0    pypi
+rsa                       4.7.2                    pypi_0    pypi
+scikit-image              0.18.1                   pypi_0    pypi
+scikit-learn              0.24.2           py37ha9443f7_0
+scipy                     1.6.2            py37had2a1c9_1
+send2trash                1.5.0              pyhd3eb1b0_1
+setuptools                52.0.0           py37h06a4308_0
+sip                       4.19.8           py37hf484d3e_0
+six                       1.16.0             pyhd3eb1b0_0
+sniffio                   1.2.0            py37h06a4308_1
+sqlalchemy                1.4.18                   pypi_0    pypi
+sqlite                    3.35.4               hdfb4753_0
+tabulate                  0.8.9            py37h06a4308_0
+tensorboard               2.5.0                    pypi_0    pypi
+tensorboard-data-server   0.6.1                    pypi_0    pypi
+tensorboard-plugin-wit    1.8.0                    pypi_0    pypi
+tensorboardx              2.2                      pypi_0    pypi
+termcolor                 1.1.0                    pypi_0    pypi
+terminado                 0.9.4            py37h06a4308_0
+testpath                  0.4.4              pyhd3eb1b0_0
+threadpoolctl             2.1.0              pyh5ca1d4c_0    conda-forge
+tifffile                  2021.6.14                pypi_0    pypi
+tk                        8.6.10               hbc83047_0
+tomli                     2.0.1                    pypi_0    pypi
+torchvision               0.8.2                py37_cu102    pytorch
+tornado                   6.1              py37h27cfd23_0
+tqdm                      4.61.1                   pypi_0    pypi
+traitlets                 5.0.5              pyhd3eb1b0_0
+transaction               3.0.1                    pypi_0    pypi
+transforms3d              0.3.1                    pypi_0    pypi
+translationstring         1.4                      pypi_0    pypi
+triangle                  20200424                 pypi_0    pypi
+typing-extensions         4.7.1                    pypi_0    pypi
+urllib3                   1.26.5                   pypi_0    pypi
+velruse                   1.1.1                    pypi_0    pypi
+venusian                  3.0.0                    pypi_0    pypi
+vispy                     0.6.6                    pypi_0    pypi
+wcwidth                   0.2.5                      py_0
+webencodings              0.5.1                    py37_1
+webob                     1.8.7                    pypi_0    pypi
+werkzeug                  2.0.1                    pypi_0    pypi
+wheel                     0.36.2             pyhd3eb1b0_0
+widgetsnbextension        3.5.1                    py37_0    conda-forge
+xz                        5.2.5                h7b6447c_0
+yacs                      0.1.6                      py_0    conda-forge
+yaml                      0.2.5                h7b6447c_0
+yapf                      0.40.2                   pypi_0    pypi
+zeromq                    4.3.4                h2531618_0
+zipp                      3.4.1              pyhd3eb1b0_0
+zlib                      1.2.11               h7b6447c_3
+zope-deprecation          4.4.0                    pypi_0    pypi
+zope-interface            5.4.0                    pypi_0    pypi
+zstd                      1.4.9                haebb681_0
+
+####
