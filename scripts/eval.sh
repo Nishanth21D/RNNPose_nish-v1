@@ -1,8 +1,12 @@
-export PROJECT_ROOT_PATH=/home/RNNPose/Projects/Works/RNNPose_release
+export PROJECT_ROOT_PATH=/home/RNNPose
 
 export PYTHONPATH="$PROJECT_ROOT_PATH:$PYTHONPATH"
 export PYTHONPATH="$PROJECT_ROOT_PATH/thirdparty:$PYTHONPATH"
 export model_dir='outputs'
+
+#export NCCL_IB_DISABLE=1
+export NCCL_DEBUG=INFO
+
 seq=cat
 gpu=1
 start_gpu_id=0
